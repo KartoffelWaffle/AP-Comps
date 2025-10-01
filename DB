@@ -1,0 +1,115 @@
+import sqlite3 from 'sqlite3';
+
+let DB_init = false;
+
+const _DB = new sqlite3.Database('./TODO_DB', (err) => {
+    if (err) {
+        console.log(err)
+        console.log("error: ", err)
+    } else {
+        init();
+    }
+
+});
+
+console.log(DB_init);
+
+function init() {
+
+    console.log("Creating Tables...");
+
+    _DB.serialize(() => {
+
+        _DB.run(`CREATE TABLE Task_Status (
+            status_id INTEGER PRIMARY KEY NOT NULL UNIQUE,
+            status_name VARCHAR(255) NOT NULL UNIQUE
+        );`, [], (err) => {
+            if (err) {
+                console.log("Create task status", err);
+            }
+            else {
+                console.log("Task Status Table Created.");
+            }
+        });
+
+
+        _DB.run(`INSERT INTO Task_Status (status_id, status_name) VALUES (0, 'Not Started'), (1, 'In Progress'), (2, 'Completed');`);
+
+        _DB.run(`CREATE TABLE Task_Types (
+            type_id INTEGER PRIMARY KEY NOT NULL UNIQUE,
+            type_name VARCHAR(255) UNIQUE NOT NULL
+        );`, [], (err) => {
+            if (err) {
+                console.log("Create task types", err);
+            }
+            else {
+                console.log("Task Types Table Created.");
+            }
+        });
+
+
+
+        _DB.run(`INSERT INTO Task_Types (type_id, type_name) VALUES (0, 'Default'), (1, 'Activity'), (2, 'Admin');`);
+
+        _DB.run(`CREATE TABLE Users (
+            user_id INTEGER PRIMARY KEY NOT NULL UNIQUE,
+            name VARCHAR(255) NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 0
+        );`, [], (err) => {
+            if (err) {
+                console.log("Create Users", err);
+            }
+            else {
+                console.log("Users Table Created.");
+            }
+        });
+
+        _DB.run(`CREATE TABLE Tasks (
+            task_id INTEGER PRIMARY KEY NOT NULL UNIQUE,
+            subject VARCHAR(255),
+            description VARCHAR(1024),
+            category VARCHAR(255),
+            type INTEGER NOT NULL DEFAULT 0,
+            status_id INTEGER NOT NULL DEFAULT 0,
+            owner_id INTEGER,
+            is_deleted INTEGER NOT NULL DEFAULT 0,
+            created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            modified_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            due_time DATETIME,
+            completed_time DATETIME,
+            FOREIGN KEY (status_id) REFERENCES Task_Status(status_id),
+            FOREIGN KEY (type) REFERENCES Task_Types(type_id),
+            FOREIGN KEY (owner_id) REFERENCES Users(user_id)
+        );`, [], (err) => {
+            if (err) {
+                console.log("Create Tasks", err);
+            }
+            else {
+                console.log("Tasks Table Created.");
+            }
+        });
+
+        _DB.run("INSERT INTO Tasks (subject, description, due_time) VALUES ('Test Task','This is an example description of a task','2025-10-30T15:50:00.000Z');");
+
+        _DB.get("SELECT * FROM Tasks", (err, row) => {
+            if (err) {
+                console.log("GET Error:", err)
+            }
+            else {
+                console.log(row);
+            }
+        });
+
+    });
+
+    _DB.serialize(() => {
+        _DB.get("SELECT * FROM Tasks", (err, row) => {
+            if (err) {
+                console.log("GET Error:", err)
+            }
+            else {
+                console.log(row);
+            }
+        });
+    });
+}
